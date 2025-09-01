@@ -1,0 +1,86 @@
+✅ SOLUSI LENGKAP
+Berikut pendekatan terbaik:
+
+1. Gunakan customId dengan user ID supaya tombol hanya bisa ditekan oleh user yang memulai
+Contoh customId: guide_next_1234567890
+
+js
+Copy
+Edit
+// Saat generate tombol (misal di halaman awal):
+function getNavigationButtons(currentPage, userId) {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`guide_prev_${userId}`)
+      .setLabel('◀')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(currentPage === 0),
+    new ButtonBuilder()
+      .setCustomId(`guide_next_${userId}`)
+      .setLabel('▶')
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(currentPage === lastPage),
+  );
+}
+2. Validasi: hanya pemilik tombol yang bisa klik
+Lalu di handleGuideInteraction.js:
+
+js
+Copy
+Edit
+async function handleGuideInteraction(interaction) {
+  if (!interaction.isButton()) return;
+
+  try {
+    const [action, direction, userId] = interaction.customId.split('_');
+
+    if (interaction.user.id !== userId) {
+      return await interaction.reply({
+        content: '❌ Kamu tidak bisa menggunakan tombol ini.',
+        ephemeral: true
+      });
+    }
+
+    // Cegah interaksi kedaluwarsa
+    if (interaction.replied || interaction.deferred) return;
+
+    // Dapatkan data halaman baru (next atau previous)
+    const pageIndex = getPageIndex(interaction.message.embeds[0].title); // contoh fungsi kamu
+    const newPageIndex = direction === 'next' ? pageIndex + 1 : pageIndex - 1;
+
+    // Update embed + tombol baru (disable tombol lama secara otomatis karena ID beda)
+    await interaction.update({
+      embeds: [embedList[newPageIndex]],
+      components: [getNavigationButtons(newPageIndex, userId)],
+    });
+
+  } catch (err) {
+    console.error('❌ Error handling guide interaction:', err.message);
+    // Optional: tanggapi interaksi kalau belum acknowledged
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({ content: '❌ Terjadi kesalahan.', ephemeral: true });
+    }
+  }
+}
+3. Tombol hanya aktif sekali
+Dengan cara di atas:
+
+Karena customId mengandung user ID, hanya user itu yang bisa tekan
+
+Setelah ditekan, interaction.update() mengganti tombol dengan customId baru (halaman baru)
+
+Jadi tombol sebelumnya sudah tidak aktif untuk ditekan lagi (Discord akan anggap "expired")
+
+🔚 Bonus: Disable Semua Tombol Setelah Halaman Terakhir
+Jika kamu ingin tombol benar-benar hilang atau nonaktif setelah halaman terakhir, kamu bisa:
+
+js
+Copy
+Edit
+if (newPageIndex === lastPageIndex) {
+  return interaction.update({
+    embeds: [embedList[newPageIndex]],
+    components: [], // kosongkan tombol
+  });
+}
+Kalau kamu mau, kirim juga cuplikan file guideHandler.js & embed list-mu biar aku bantu sesuaikan langsung.

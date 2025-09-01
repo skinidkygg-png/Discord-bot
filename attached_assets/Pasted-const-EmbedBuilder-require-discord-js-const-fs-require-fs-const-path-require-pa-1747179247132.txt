@@ -1,0 +1,126 @@
+const { EmbedBuilder } = require('discord.js');
+const fs = require('fs');
+const path = require('path');
+
+// Path ke database XP
+const levelsPath = path.join(__dirname, '../utils/levels/levels.json');
+let levels = require(levelsPath);
+
+function saveLevels() {
+  fs.writeFileSync(levelsPath, JSON.stringify(levels, null, 2));
+}
+
+// Tabel XP per level
+function getRequiredXP(level) {
+  const xpTable = {
+    1: 3000,
+    2: 10000,
+    3: 15000,
+    4: 25000,
+    5: 35000,
+    6: 50000,
+    7: 65000,
+    8: 80000,
+    9: 90000,
+    10: 100000
+  };
+  return xpTable[level] || 999999;
+}
+
+// Progress bar
+function generateProgressBar(current, max, length) {
+  const filled = Math.round((current / max) * length);
+  const empty = length - filled;
+  return '🟨'.repeat(filled) + '⬛'.repeat(empty);
+}
+
+// ROLE ID berdasarkan level
+const levelRoles = {
+  1: '1371987300686368768',
+  2: '1371987364779397231',
+  3: '1371987417258659971',
+  4: '1371987455842062406',
+  5: '1371987538683629668',
+  6: '1371987568798732398',
+  7: '1371987608376180837',
+  8: '1371987745194381426',
+  9: '1371987799678517410',
+  10: '1371987838861840475'
+};
+
+// EVENT messageCreate
+client.on('messageCreate', async (message) => {
+  if (message.author.bot || !message.guild) return;
+
+  const userId = message.author.id;
+  const member = message.member;
+
+  // Init user XP if not exist
+  if (!levels[userId]) {
+    levels[userId] = {
+      xp: 0,
+      level: 1
+    };
+  }
+
+  // Tambahkan XP random (anti-spam bisa ditambah cooldown nanti)
+  const xpGain = Math.floor(Math.random() * 10) + 15;
+  levels[userId].xp += xpGain;
+
+  let currentLevel = levels[userId].level;
+  let currentXP = levels[userId].xp;
+
+  let leveledUp = false;
+
+  // Loop level up jika XP cukup
+  while (currentXP >= getRequiredXP(currentLevel)) {
+    currentXP -= getRequiredXP(currentLevel);
+    currentLevel++;
+    levels[userId].level = currentLevel;
+    levels[userId].xp = currentXP;
+    leveledUp = true;
+  }
+
+  // Save setelah XP update
+  saveLevels();
+
+  // Jika naik level, kirim embed
+  if (leveledUp) {
+    const newLevel = currentLevel;
+    const userXP = currentXP;
+    const nextXP = getRequiredXP(newLevel);
+    const progressBar = generateProgressBar(userXP, nextXP, 20);
+
+    const roleId = levelRoles[newLevel];
+    const role = message.guild.roles.cache.get(roleId);
+    if (role) {
+      await member.roles.add(role).catch(console.error);
+    }
+
+    const gifUrl = 'https://cdn.discordapp.com/attachments/1370986803821154385/1371986060841848952/original-1ac433bb5a490fc8d3a387d4c88aa011.gif';
+    const footerImage = 'https://cdn.discordapp.com/attachments/1370986803821154385/1371991939200716810/Screenshot_2023-12-18-00-33-19-46_40deb401b9ffe8e1df2f1cc5ba480b12-ai-brush-removebg-c58oi7vp.jpg';
+
+    const embed = new EmbedBuilder()
+      .setColor(0xFFD700)
+      .setTitle(`🏆 LEVEL ${newLevel} DICAPAI!`)
+      .setAuthor({
+        name: `${message.author.username}`,
+        iconURL: message.author.displayAvatarURL({ dynamic: true })
+      })
+      .setDescription(`✨ ${message.author} telah naik ke level **${newLevel}**! ✨\n\n📈 **XP:** \`${userXP} / ${nextXP}\`\n${progressBar}`)
+      .addFields(
+        { name: '🎁 Role Baru', value: role ? `<@&${role.id}>` : 'Belum ada role untuk level ini', inline: false },
+        { name: '💰 Hadiah Tambahan', value: `+${newLevel * 100} koin\n+1 🎖️ Badge`, inline: false }
+      )
+      .setImage(gifUrl)
+      .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
+      .setFooter({
+        text: 'єαѕт¢σѕтяα',
+        iconURL: footerImage
+      })
+      .setTimestamp();
+
+    const levelChannel = message.guild.channels.cache.get('1141760622799880284');
+    if (levelChannel) levelChannel.send({ embeds: [embed] });
+  }
+});

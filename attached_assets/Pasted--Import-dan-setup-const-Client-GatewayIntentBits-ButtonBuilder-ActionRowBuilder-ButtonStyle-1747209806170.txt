@@ -1,0 +1,144 @@
+// Import dan setup
+const { Client, GatewayIntentBits, ButtonBuilder, ActionRowBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, EmbedBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
+const fs = require('fs');
+const path = './data/teams.json';
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMessageReactions] });
+
+// Command kirim reminder MCL
+client.once('ready', async () => {
+  const channel = await client.channels.fetch('1141760622799880284');
+
+  const embed = new EmbedBuilder()
+    .setColor('#FFD700')
+    .setTitle('🏆 MCL Bounty Rush – Mobile Legends')
+    .setDescription(
+      '🔥 **Ayo bersiap untuk pertarungan terbesar minggu ini!**\n\n' +
+      '> ⏰ **Jam:** 21:00 WIB (Sabtu Malam)\n' +
+      '> ⚔️ **Mode:** Solo & Squad\n' +
+      '> 🎁 **Hadiah:** Skin, Diamond, dan gengsi tak terbatas!\n\n' +
+      'Tekan tombol di bawah untuk membuat atau bergabung dengan tim kamu sekarang!'
+    )
+    .setImage('https://cdn.discordapp.com/attachments/1370986803821154385/1372016519080443945/MCL-Bounty-Rush-Mobile-Legends2.jpg')
+    .setFooter({
+      text: '© єαѕт¢σѕтяα',
+      iconURL: 'https://cdn.discordapp.com/attachments/1370986803821154385/1371991939200716810/Screenshot_2023-12-18-00-33-19-46_40deb401b9ffe8e1df2f1cc5ba480b12-ai-brush-removebg-c58oi7vp.jpg'
+    })
+    .setTimestamp();
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId('create_team').setLabel('➕ Buat Tim').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('join_team').setLabel('📌 Gabung Tim').setStyle(ButtonStyle.Primary)
+  );
+
+  await channel.send({ embeds: [embed], components: [row] });
+});
+
+// Event tombol ditekan
+client.on('interactionCreate', async interaction => {
+  if (interaction.isButton()) {
+    if (interaction.customId === 'create_team') {
+      const modal = new ModalBuilder()
+        .setCustomId('create_team_modal')
+        .setTitle('🛡️ Buat Tim MCL');
+
+      const teamName = new TextInputBuilder()
+        .setCustomId('team_name')
+        .setLabel('Nama Tim')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+
+      const teamLink = new TextInputBuilder()
+        .setCustomId('team_link')
+        .setLabel('Link Tim')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+
+      const teamDesc = new TextInputBuilder()
+        .setCustomId('team_desc')
+        .setLabel('Deskripsi (opsional)')
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(false);
+
+      const teamSlot = new TextInputBuilder()
+        .setCustomId('team_slot')
+        .setLabel('Jumlah Slot Dibutuhkan (max 5)')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(teamName),
+        new ActionRowBuilder().addComponents(teamLink),
+        new ActionRowBuilder().addComponents(teamDesc),
+        new ActionRowBuilder().addComponents(teamSlot)
+      );
+
+      await interaction.showModal(modal);
+    }
+
+    if (interaction.customId === 'join_team') {
+      if (!fs.existsSync(path)) return interaction.reply({ content: '❌ Belum ada tim terdaftar.', ephemeral: true });
+      const teams = JSON.parse(fs.readFileSync(path));
+      if (teams.length === 0) return interaction.reply({ content: '❌ Belum ada tim terdaftar.', ephemeral: true });
+
+      const options = teams.map((team, index) => new StringSelectMenuOptionBuilder()
+        .setLabel(`${team.name} (${team.slot} Slot)`)
+        .setValue(String(index))
+        .setDescription(team.desc || 'Tidak ada deskripsi'));
+
+      const menu = new StringSelectMenuBuilder()
+        .setCustomId('select_team')
+        .setPlaceholder('Pilih tim untuk bergabung')
+        .addOptions(options);
+
+      const row = new ActionRowBuilder().addComponents(menu);
+
+      await interaction.reply({ content: 'Pilih tim yang ingin kamu ikuti:', components: [row], ephemeral: true });
+    }
+  }
+
+  if (interaction.isModalSubmit()) {
+    if (interaction.customId === 'create_team_modal') {
+      const name = interaction.fields.getTextInputValue('team_name');
+      const link = interaction.fields.getTextInputValue('team_link');
+      const desc = interaction.fields.getTextInputValue('team_desc');
+      const slot = interaction.fields.getTextInputValue('team_slot');
+
+      if (isNaN(slot) || Number(slot) < 1 || Number(slot) > 5) {
+        return await interaction.reply({ content: '❌ Slot harus berupa angka antara 1–5.', ephemeral: true });
+      }
+
+      let teams = [];
+      if (fs.existsSync(path)) teams = JSON.parse(fs.readFileSync(path));
+
+      teams.push({ name, link, desc, slot, createdAt: Date.now() });
+      fs.writeFileSync(path, JSON.stringify(teams, null, 2));
+
+      await interaction.reply({ content: `✅ Tim **${name}** berhasil dibuat!`, ephemeral: true });
+    }
+  }
+
+  if (interaction.isStringSelectMenu()) {
+    if (interaction.customId === 'select_team') {
+      const selectedIndex = Number(interaction.values[0]);
+      const teams = JSON.parse(fs.readFileSync(path));
+      const team = teams[selectedIndex];
+
+      if (team) {
+        await interaction.reply({ content: `🔗 Link tim **${team.name}**: ${team.link}`, ephemeral: true });
+      } else {
+        await interaction.reply({ content: '❌ Tim tidak ditemukan.', ephemeral: true });
+      }
+    }
+  }
+});
+
+// Auto bersihkan tim setelah 5 jam
+setInterval(() => {
+  if (!fs.existsSync(path)) return;
+  const teams = JSON.parse(fs.readFileSync(path));
+  const now = Date.now();
+  const updated = teams.filter(t => now - t.createdAt < 5 * 60 * 60 * 1000);
+  fs.writeFileSync(path, JSON.stringify(updated, null, 2));
+}, 10 * 60 * 1000);
+
+client.login('YOUR_BOT_TOKEN');

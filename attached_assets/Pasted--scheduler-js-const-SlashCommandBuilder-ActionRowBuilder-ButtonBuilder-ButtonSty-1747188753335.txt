@@ -1,0 +1,184 @@
+// scheduler.js
+const {
+  SlashCommandBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  EmbedBuilder,
+  SelectMenuBuilder,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle
+} = require('discord.js');
+const fs = require('fs');
+const path = './utils/admin schedule/schedules/schedules.json';
+
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('schedule')
+    .setDescription('Panel untuk mengatur pesan terjadwal'),
+
+  async execute(interaction) {
+    const embed = new EmbedBuilder()
+      .setTitle('📆 Panel Penjadwalan Pesan Otomatis')
+      .setDescription(
+        `Gunakan tombol di bawah untuk membuat, melihat, atau menghapus pesan terjadwal.
+
+⚠️ *Footer akan otomatis diset ke* © єαѕт¢σѕтяα
+🕓 *Waktu format: YYYY-MM-DDTHH:mm*`
+      )
+      .setColor(0x2b2d31)
+      .setFooter({ text: '© єαѕт¢σѕтяα' });
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('createSchedule')
+        .setLabel('➕ Buat Jadwal')
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId('deleteSchedule')
+        .setLabel('🗑️ Hapus Jadwal')
+        .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder()
+        .setCustomId('listSchedule')
+        .setLabel('📜 Lihat Jadwal')
+        .setStyle(ButtonStyle.Primary)
+    );
+
+    await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+  },
+
+  // Load & Save
+  loadSchedules() {
+    try {
+      return JSON.parse(fs.readFileSync(path, 'utf-8'));
+    } catch {
+      return [];
+    }
+  },
+
+  saveSchedules(schedules) {
+    fs.writeFileSync(path, JSON.stringify(schedules, null, 2));
+  },
+
+  saveSchedule(schedule) {
+    const arr = this.loadSchedules();
+    arr.push(schedule);
+    this.saveSchedules(arr);
+  },
+
+  // ➕ Buat Jadwal
+  async createHandler(interaction) {
+    const modal = new ModalBuilder()
+      .setCustomId('scheduleModal')
+      .setTitle('Schedule');
+
+    const titleInput = new TextInputBuilder()
+      .setCustomId('title')
+      .setLabel('Judul Embed')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('Masukkan judul')
+      .setRequired(true);
+
+    const descInput = new TextInputBuilder()
+      .setCustomId('description')
+      .setLabel('Deskripsi Embed')
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder('Masukkan deskripsi')
+      .setRequired(true);
+
+    const colorInput = new TextInputBuilder()
+      .setCustomId('color')
+      .setLabel('Warna Embed (dalam hex, contoh: FF0000)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('Contoh: FF0000')
+      .setRequired(true);
+
+    const thumbInput = new TextInputBuilder()
+      .setCustomId('thumbnail')
+      .setLabel('Thumbnail URL')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('https://link.to/thumb.png')
+      .setRequired(false);
+
+    const imageInput = new TextInputBuilder()
+      .setCustomId('image')
+      .setLabel('Gambar URL')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('https://link.to/banner.jpg')
+      .setRequired(false);
+
+    const timeInput = new TextInputBuilder()
+      .setCustomId('time')
+      .setLabel('Waktu Kirim (YYYY-MM-DDTHH:mm)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('Contoh: 2025-06-01T14:00')
+      .setRequired(true);
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(titleInput),
+      new ActionRowBuilder().addComponents(descInput),
+      new ActionRowBuilder().addComponents(colorInput),
+      new ActionRowBuilder().addComponents(thumbInput),
+      new ActionRowBuilder().addComponents(imageInput),
+      new ActionRowBuilder().addComponents(timeInput)
+    );
+
+    await interaction.showModal(modal);
+  },
+
+  // 📜 Lihat Jadwal
+  async listHandler(interaction) {
+    const schedules = this.loadSchedules();
+    if (schedules.length === 0) {
+      return interaction.reply({ content: 'Tidak ada jadwal yang tersimpan.', ephemeral: true });
+    }
+
+    const embed = new EmbedBuilder()
+      .setTitle('📜 Daftar Jadwal Terjadwal')
+      .setColor(0x2b2d31)
+      .setFooter({ text: '© єαѕт¢σѕтяα' });
+
+    schedules.forEach((s, i) => {
+      embed.addFields({
+        name: `${i + 1}. ${s.embed?.title || 'Tanpa Judul'}`,
+        value: `• **Deskripsi:** ${s.embed?.description || '-'}
+• **Waktu:** ${s.time}
+• **Loop:** ${s.embed?.loop ? '🔁' : '⏹️'}`,
+      });
+    });
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  },
+
+  // 🗑️ Hapus Jadwal
+  async deleteHandler(interaction) {
+    const schedules = this.loadSchedules();
+    if (schedules.length === 0) {
+      return interaction.reply({ content: 'Tidak ada jadwal yang dapat dihapus.', ephemeral: true });
+    }
+
+    const menu = new SelectMenuBuilder()
+      .setCustomId('selectSchedule')
+      .setPlaceholder('Pilih yang ingin dihapus')
+      .setMinValues(1)
+      .setMaxValues(1);
+
+    schedules.forEach((s, idx) => {
+      menu.addOptions({ label: s.embed?.title || `Jadwal ${idx + 1}`, value: idx.toString() });
+    });
+
+    const row = new ActionRowBuilder().addComponents(menu);
+    const embed = new EmbedBuilder()
+      .setTitle('🗑️ Hapus Jadwal')
+      .setDescription('Pilih jadwal yang ingin dihapus.');
+
+    await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+  },
+
+  deleteSchedule(index) {
+    const arr = this.loadSchedules();
+    arr.splice(index, 1);
+    this.saveSchedules(arr);
+  }
+};

@@ -1,0 +1,251 @@
+const {
+  SlashCommandBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  EmbedBuilder,
+  SelectMenuBuilder
+} = require('discord.js');
+const fs = require('fs');
+const path = './utils/admin schedule/schedules.json';
+
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('schedule')
+    .setDescription('Panel untuk mengatur pesan terjadwal'),
+
+  async execute(interaction) {
+    const embed = new EmbedBuilder()
+      .setTitle('📆 Panel Penjadwalan Pesan Otomatis')
+      .setDescription(
+        `Gunakan tombol di bawah untuk membuat, melihat, atau menghapus pesan terjadwal.
+
+⚠️ *Footer akan otomatis diset ke* © єαѕт¢σѕтяα
+🕓 *Format waktu: YYYY-MM-DDTHH:mm (contoh: 2024-03-20T15:30)*`
+      )
+      .setColor(0x2b2d31)
+      .setFooter({ text: '© єαѕт¢σѕтяα' });
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('createSchedule')
+        .setLabel('➕ Buat Jadwal')
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId('deleteSchedule')
+        .setLabel('🗑️ Hapus Jadwal')
+        .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder()
+        .setCustomId('listSchedule')
+        .setLabel('📜 Lihat Jadwal')
+        .setStyle(ButtonStyle.Primary)
+    );
+
+    await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+  },
+
+  loadSchedules() {
+    try {
+      return JSON.parse(fs.readFileSync(path, 'utf-8'));
+    } catch {
+      return { schedules: [] };
+    }
+  },
+
+  saveSchedules(schedules) {
+    fs.writeFileSync(path, JSON.stringify(schedules, null, 2));
+  },
+
+  saveSchedule(schedule) {
+    const data = this.loadSchedules();
+    data.schedules.push(schedule);
+    this.saveSchedules(data);
+  },
+
+  async createHandler(interaction) {
+    // Pemilihan Tahun
+    const yearEmbed = new EmbedBuilder()
+      .setTitle('📅 Pilih Tahun')
+      .setDescription('Silakan pilih tahun untuk jadwal pesan terjadwal.')
+      .setColor(0x2b2d31)
+      .setFooter({ text: '© єαѕт¢σѕтяα' });
+
+    const yearRow = new ActionRowBuilder().addComponents(
+      new SelectMenuBuilder()
+        .setCustomId('selectYear')
+        .setPlaceholder('Pilih Tahun')
+        .addOptions([
+          { label: '2025', value: '2025' },
+          { label: '2026', value: '2026' },
+          { label: '2027', value: '2027' },
+          { label: '2028', value: '2028' }
+        ])
+    );
+
+    await interaction.reply({
+      embeds: [yearEmbed],
+      components: [yearRow],
+      ephemeral: true
+    });
+  },
+
+  async handleInteraction(interaction) {
+    if (interaction.isButton()) {
+      switch (interaction.customId) {
+        case 'createSchedule':
+          await this.createHandler(interaction);
+          break;
+        case 'deleteSchedule':
+          // Logic to handle schedule deletion
+          break;
+        case 'listSchedule':
+          // Logic to handle listing schedules
+          break;
+      }
+    }
+
+    if (interaction.isSelectMenu()) {
+      const year = interaction.values[0];
+
+      if (interaction.customId === 'selectYear') {
+        // Pemilihan Bulan berdasarkan Tahun
+        const monthEmbed = new EmbedBuilder()
+          .setTitle('📅 Pilih Bulan')
+          .setDescription(`Silakan pilih bulan untuk jadwal pesan terjadwal tahun ${year}.`)
+          .setColor(0x2b2d31)
+          .setFooter({ text: '© єαѕт¢σѕтяα' });
+
+        const monthRow = new ActionRowBuilder().addComponents(
+          new SelectMenuBuilder()
+            .setCustomId('selectMonth')
+            .setPlaceholder('Pilih Bulan')
+            .addOptions([
+              { label: 'Januari', value: '01' },
+              { label: 'Februari', value: '02' },
+              { label: 'Maret', value: '03' },
+              { label: 'April', value: '04' },
+              { label: 'Mei', value: '05' },
+              { label: 'Juni', value: '06' },
+              { label: 'Juli', value: '07' },
+              { label: 'Agustus', value: '08' },
+              { label: 'September', value: '09' },
+              { label: 'Oktober', value: '10' },
+              { label: 'November', value: '11' },
+              { label: 'Desember', value: '12' }
+            ])
+        );
+
+        await interaction.update({
+          embeds: [monthEmbed],
+          components: [monthRow],
+          ephemeral: true
+        });
+      }
+
+      if (interaction.customId === 'selectMonth') {
+        const month = interaction.values[0];
+        // Pemilihan Tanggal berdasarkan Bulan dan Tahun
+        const dateEmbed = new EmbedBuilder()
+          .setTitle('📅 Pilih Tanggal')
+          .setDescription(`Silakan pilih tanggal untuk bulan ${month} tahun ${year}.`)
+          .setColor(0x2b2d31)
+          .setFooter({ text: '© єαѕт¢σѕтяα' });
+
+        const dateRow = new ActionRowBuilder().addComponents(
+          new SelectMenuBuilder()
+            .setCustomId('selectDate')
+            .setPlaceholder('Pilih Tanggal')
+            .addOptions(Array.from({ length: 31 }, (_, i) => ({
+              label: `${i + 1}`,
+              value: `${i + 1}`,
+            })))
+        );
+
+        await interaction.update({
+          embeds: [dateEmbed],
+          components: [dateRow],
+          ephemeral: true
+        });
+      }
+
+      if (interaction.customId === 'selectDate') {
+        const date = interaction.values[0];
+        // Pemilihan Jam
+        const timeEmbed = new EmbedBuilder()
+          .setTitle('🕓 Pilih Jam')
+          .setDescription(`Silakan pilih jam untuk jadwal pada ${date}-${interaction.message.embeds[0].title.split(' ')[2]}.`)
+          .setColor(0x2b2d31)
+          .setFooter({ text: '© єαѕт¢σѕтяα' });
+
+        const timeRow = new ActionRowBuilder().addComponents(
+          new SelectMenuBuilder()
+            .setCustomId('selectTime')
+            .setPlaceholder('Pilih Jam')
+            .addOptions([
+              { label: '1', value: '01' },
+              { label: '2', value: '02' },
+              { label: '3', value: '03' },
+              { label: '4', value: '04' },
+              { label: '5', value: '05' },
+              { label: '6', value: '06' },
+              { label: '7', value: '07' },
+              { label: '8', value: '08' },
+              { label: '9', value: '09' },
+              { label: '10', value: '10' },
+              { label: '11', value: '11' },
+              { label: '12', value: '12' }
+            ])
+        );
+
+        await interaction.update({
+          embeds: [timeEmbed],
+          components: [timeRow],
+          ephemeral: true
+        });
+      }
+
+      if (interaction.customId === 'selectTime') {
+        const hour = interaction.values[0];
+        // Pemilihan AM/PM
+        const ampmEmbed = new EmbedBuilder()
+          .setTitle('🕓 Pilih AM/PM')
+          .setDescription(`Silakan pilih AM atau PM untuk jam ${hour} pada jadwal pesan.`)
+          .setColor(0x2b2d31)
+          .setFooter({ text: '© єαѕт¢σѕтяα' });
+
+        const ampmRow = new ActionRowBuilder().addComponents(
+          new SelectMenuBuilder()
+            .setCustomId('selectAMPM')
+            .setPlaceholder('Pilih AM/PM')
+            .addOptions([
+              { label: 'AM', value: 'AM' },
+              { label: 'PM', value: 'PM' }
+            ])
+        );
+
+        await interaction.update({
+          embeds: [ampmEmbed],
+          components: [ampmRow],
+          ephemeral: true
+        });
+      }
+
+      if (interaction.customId === 'selectAMPM') {
+        const ampm = interaction.values[0];
+        const year = interaction.message.embeds[0].title.split(' ')[2]; // Extract year
+        const month = interaction.message.embeds[1].description.split(' ')[4]; // Extract month
+        const date = interaction.message.embeds[2].description.split(' ')[4]; // Extract date
+        const hour = interaction.message.embeds[3].description.split(' ')[4]; // Extract hour
+
+        // Format the full datetime string
+        const formattedTime = `${year}-${month}-${date}T${hour}:00 ${ampm}`;
+
+        // Now you can process this formatted time (e.g. save schedule)
+        await interaction.reply({
+          content: `Jadwal telah diset untuk ${formattedTime}. Lanjutkan dengan pengaturan pesan atau selesai.`,
+          ephemeral: true
+        });
+      }
+    }
+  }
+};

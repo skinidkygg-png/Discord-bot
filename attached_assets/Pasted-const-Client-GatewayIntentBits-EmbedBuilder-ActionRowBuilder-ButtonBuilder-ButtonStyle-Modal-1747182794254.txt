@@ -1,0 +1,95 @@
+const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
+const cron = require('node-cron');
+const fs = require('fs');
+const path = require('path');
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
+
+const DB_PATH = path.join(__dirname, 'teamDB.json');
+const CHANNEL_ID = '1141760622799880284';
+
+// Fungsi simpan ke database lokal
+function saveTeam(team) {
+  const teams = JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
+  teams.push(team);
+  fs.writeFileSync(DB_PATH, JSON.stringify(teams, null, 2));
+}
+
+// Fungsi hapus database setiap hari
+cron.schedule('0 16 * * *', () => {
+  // 16:00 UTC = 23:00 WIB (waktu aman reset)
+  fs.writeFileSync(DB_PATH, '[]');
+  console.log("✅ Data tim telah direset.");
+});
+
+// INTERACTION HANDLING
+client.on('interactionCreate', async interaction => {
+  if (interaction.isButton()) {
+    if (interaction.customId === 'create_team') {
+      const modal = new ModalBuilder()
+        .setCustomId('modal_create_team')
+        .setTitle('📝 Formulir Pendaftaran Tim MCL');
+
+      const nameField = new TextInputBuilder()
+        .setCustomId('team_name')
+        .setLabel('Nama Tim')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+
+      const linkField = new TextInputBuilder()
+        .setCustomId('team_link')
+        .setLabel('Link Tim (formulir atau squad)')
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true);
+
+      const memberField = new TextInputBuilder()
+        .setCustomId('team_members')
+        .setLabel('Jumlah Anggota yang Dibutuhkan (max 5)')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+
+      const row1 = new ActionRowBuilder().addComponents(nameField);
+      const row2 = new ActionRowBuilder().addComponents(linkField);
+      const row3 = new ActionRowBuilder().addComponents(memberField);
+
+      modal.addComponents(row1, row2, row3);
+      await interaction.showModal(modal);
+    }
+  }
+
+  if (interaction.isModalSubmit()) {
+    if (interaction.customId === 'modal_create_team') {
+      const teamName = interaction.fields.getTextInputValue('team_name');
+      const teamLink = interaction.fields.getTextInputValue('team_link');
+      const memberCount = parseInt(interaction.fields.getTextInputValue('team_members'));
+
+      if (isNaN(memberCount) || memberCount < 1 || memberCount > 5) {
+        return interaction.reply({ content: '❌ Jumlah anggota harus antara 1 - 5 orang.', ephemeral: true });
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor(0x00b0f4)
+        .setTitle('🛡️ Tim MCL Baru Telah Dibuat!')
+        .setDescription(
+          `**📛 Nama Tim:** ${teamName}\n` +
+          `**🔗 Link Tim:** [Klik di sini](${teamLink})\n` +
+          `**👥 Dibutuhkan:** ${memberCount} anggota\n\n` +
+          `> Bergabung sekarang sebelum slot habis!`
+        )
+        .setFooter({ text: `Didaftarkan oleh ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL() });
+
+      await interaction.reply({ embeds: [embed] });
+
+      // Simpan ke DB
+      const teamData = {
+        teamName,
+        teamLink,
+        memberCount,
+        createdBy: interaction.user.tag,
+        timestamp: new Date().toISOString()
+      };
+      saveTeam(teamData);
+    }
+  }
+});
+
+client.login('TOKEN_BOT_DISCORD_KAMU');

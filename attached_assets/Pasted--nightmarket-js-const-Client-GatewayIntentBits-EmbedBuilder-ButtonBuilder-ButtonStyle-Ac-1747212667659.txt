@@ -1,0 +1,82 @@
+// nightmarket.js
+
+const { Client, GatewayIntentBits, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
+const fetch = require('node-fetch');
+const fs = require('fs');
+const path = require('path');
+
+// Inisialisasi client Discord
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+
+// ID channel Discord tempat pesan akan dikirim
+const CHANNEL_ID = '1141760622799880284';
+
+// URL gambar untuk embed
+const IMAGE_URL = 'https://media.discordapp.net/attachments/1370986803821154385/1372132218176274472/download.jpg?format=webp';
+
+// URL untuk tombol "Launch Valorant"
+const VALORANT_URL = 'https://playvalorant.com/';
+
+// Path untuk menyimpan status terakhir
+const STATUS_FILE = path.join(__dirname, 'last_nightmarket.json');
+
+// Fungsi untuk memeriksa pengumuman Night Market
+async function checkNightMarket() {
+  try {
+    // Ganti URL berikut dengan URL RSS feed atau API resmi Riot Games jika tersedia
+    const response = await fetch('https://api.riotgames.com/valorant/news'); // Contoh URL
+    const data = await response.json();
+
+    // Cek apakah ada pengumuman Night Market terbaru
+    const latestAnnouncement = data.articles.find(article => article.title.toLowerCase().includes('night market'));
+
+    if (!latestAnnouncement) return;
+
+    // Baca status terakhir
+    let lastStatus = {};
+    if (fs.existsSync(STATUS_FILE)) {
+      lastStatus = JSON.parse(fs.readFileSync(STATUS_FILE, 'utf8'));
+    }
+
+    // Jika pengumuman sudah pernah diproses, hentikan
+    if (lastStatus.id === latestAnnouncement.id) return;
+
+    // Simpan status terbaru
+    fs.writeFileSync(STATUS_FILE, JSON.stringify({ id: latestAnnouncement.id }));
+
+    // Kirim pesan ke channel Discord
+    const channel = await client.channels.fetch(CHANNEL_ID);
+    if (!channel) return;
+
+    const embed = new EmbedBuilder()
+      .setTitle('🌙 Valorant Night Market Telah Dibuka!')
+      .setDescription('Dapatkan skin favoritmu dengan diskon spesial di Night Market terbaru! 🎯')
+      .setImage(IMAGE_URL)
+      .setColor('#FF4655')
+      .setFooter({ text: '© єαѕт¢σѕтяα' })
+      .setTimestamp();
+
+    const button = new ButtonBuilder()
+      .setLabel('Launch Valorant')
+      .setStyle(ButtonStyle.Link)
+      .setURL(VALORANT_URL);
+
+    const row = new ActionRowBuilder().addComponents(button);
+
+    await channel.send({ content: '@everyone', embeds: [embed], components: [row] });
+
+  } catch (error) {
+    console.error('Error checking Night Market:', error);
+  }
+}
+
+// Event saat bot siap
+client.once('ready', () => {
+  console.log(`Bot login sebagai ${client.user.tag}`);
+
+  // Cek setiap 30 menit
+  setInterval(checkNightMarket, 30 * 60 * 1000);
+});
+
+// Login bot dengan token Anda
+client.login('YOUR_BOT_TOKEN');

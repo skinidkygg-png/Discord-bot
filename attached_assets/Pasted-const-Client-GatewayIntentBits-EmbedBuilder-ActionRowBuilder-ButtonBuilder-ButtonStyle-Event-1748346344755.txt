@@ -1,0 +1,177 @@
+const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, Events } = require('discord.js');
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
+  ]
+});
+
+// ID Role Admin Penerima DM
+const ADMIN_ROLE_ID = '1141778117325758645';
+
+// SLIDES
+function getSlides(userId) {
+  return [
+    new EmbedBuilder()
+      .setColor('#1abc9c')
+      .setTitle('🌊 Selamat Datang di Eastcostra!')
+      .setThumbnail('https://cdn-icons-png.flaticon.com/512/727/727803.png')
+      .setDescription(`
+👋 **Hallo, <@${userId}>!**
+Selamat datang di panduan resmi **Eastcostra Squad**.
+
+🚧 *Kami menerapkan sistem Trial selama 3 Hari*  
+Selama masa ini, kamu akan diperkenalkan pada budaya, aturan, dan komunitas Eastcostra.
+
+🎖 Setelah masa trial selesai dan dikonfirmasi oleh admin, kamu akan menerima **Logo Resmi** dari Eastcostra.
+
+> Tetap semangat dan nikmati prosesnya! 💪
+`)
+      .setFooter({ text: 'Eastcostra Squad • Panduan Trial', iconURL: 'https://i.imgur.com/AfFp7pu.png' }),
+
+    new EmbedBuilder()
+      .setColor('#e74c3c')
+      .setTitle('📜 Peraturan Eastcostra')
+      .setThumbnail('https://cdn-icons-png.flaticon.com/512/1828/1828665.png')
+      .setDescription(`
+🚫 **Dilarang:**
+• Memiliki lebih dari 2 SQ  
+• Membuat drama / konflik antar squad  
+• Membawa masalah pribadi ke dalam komunitas  
+• Membuat circle atau grup dalam SQ  
+• Membuat kegaduhan atau adu domba
+
+✅ **Wajib:**
+• Saling menghormati dan merespon  
+• Partisipasi dalam event dari Admin/Staff  
+• Menjaga nama baik Eastcostra
+
+> Kita di sini untuk bersenang-senang, bukan drama. ✨
+`)
+      .setFooter({ text: 'Eastcostra Squad • Panduan Trial', iconURL: 'https://i.imgur.com/AfFp7pu.png' }),
+
+    new EmbedBuilder()
+      .setColor('#9b59b6')
+      .setTitle('🎉 Kamu Berhasil Menyelesaikan Panduan!')
+      .setThumbnail('https://cdn-icons-png.flaticon.com/512/929/929567.png')
+      .setDescription(`
+🎊 **Gimana? Seru kan?**
+Eastcostra bukan hanya tentang Zepeto — kami juga punya player dari game lain, jadi kamu bisa bangun relasi lintas platform! 🌐
+
+---
+
+🎁 **Cara Dapat Logo:**
+Kamu harus menyelesaikan masa trial 3 hari.
+
+Klik tombol **Ambil Logo** di bawah ini untuk menghubungi Admin dan dapatkan logomu sekarang juga!
+
+> Logo hanya diberikan kepada anggota resmi yang lolos trial ✅
+`)
+      .setFooter({ text: 'Eastcostra Squad • Panduan Trial', iconURL: 'https://i.imgur.com/AfFp7pu.png' })
+  ];
+}
+
+// COMMAND UNTUK MEMULAI
+client.on(Events.MessageCreate, async message => {
+  if (message.content === '!guide') {
+    const slides = getSlides(message.author.id);
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`next_0_${message.author.id}`)
+        .setLabel('➡️ Lanjut')
+        .setStyle(ButtonStyle.Primary)
+    );
+
+    await message.channel.send({
+      embeds: [slides[0]],
+      components: [row]
+    });
+  }
+});
+
+// INTERAKSI BUTTON
+client.on(Events.InteractionCreate, async interaction => {
+  if (!interaction.isButton()) return;
+
+  const [action, index, userId] = interaction.customId.split('_');
+
+  if (interaction.user.id !== userId) {
+    await interaction.reply({ content: '❌ Ini bukan panduan milikmu.', ephemeral: true });
+    return;
+  }
+
+  const slides = getSlides(userId);
+  let pageIndex = parseInt(index);
+
+  if (action === 'next') pageIndex++;
+  else if (action === 'prev') pageIndex--;
+
+  const row = new ActionRowBuilder();
+
+  if (pageIndex > 0) {
+    row.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`prev_${pageIndex}_${userId}`)
+        .setLabel('⬅️ Kembali')
+        .setStyle(ButtonStyle.Secondary)
+    );
+  }
+
+  if (pageIndex < slides.length - 1) {
+    row.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`next_${pageIndex}_${userId}`)
+        .setLabel('➡️ Lanjut')
+        .setStyle(ButtonStyle.Primary)
+    );
+  }
+
+  if (pageIndex === slides.length - 1) {
+    row.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`ambil_logo_${userId}`)
+        .setLabel('🎯 Ambil Logo')
+        .setStyle(ButtonStyle.Success)
+    );
+  }
+
+  await interaction.update({
+    embeds: [slides[pageIndex]],
+    components: [row]
+  });
+});
+
+// AMBIL LOGO
+client.on(Events.InteractionCreate, async interaction => {
+  if (!interaction.isButton()) return;
+  const [action, , userId] = interaction.customId.split('_');
+
+  if (action !== 'ambil') return;
+  if (interaction.user.id !== userId) {
+    await interaction.reply({ content: '❌ Ini bukan tombol milikmu.', ephemeral: true });
+    return;
+  }
+
+  const guild = interaction.guild;
+  const target = guild.members.cache.find(member => member.roles.cache.has(ADMIN_ROLE_ID));
+
+  if (!target) {
+    await interaction.reply({ content: '❌ Admin tidak ditemukan.', ephemeral: true });
+    return;
+  }
+
+  try {
+    await target.send(`📩 **${interaction.user.tag}** telah menyelesaikan trial dan ingin mengambil logo SQ.`);
+    await interaction.reply({ content: '✅ Permintaanmu telah dikirim ke admin!', ephemeral: true });
+  } catch (err) {
+    await interaction.reply({ content: '❌ Gagal mengirim DM ke admin.', ephemeral: true });
+  }
+});
+
+client.once(Events.ClientReady, () => {
+  console.log(`✅ Bot aktif sebagai ${client.user.tag}`);
+});
+
+// Ganti dengan token bot kamu
+client.login('YOUR_BOT_TOKEN');

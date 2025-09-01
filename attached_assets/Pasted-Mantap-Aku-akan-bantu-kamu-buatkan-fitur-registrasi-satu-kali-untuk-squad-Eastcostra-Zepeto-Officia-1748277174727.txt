@@ -1,0 +1,199 @@
+Mantap! Aku akan bantu kamu buatkan fitur registrasi satu kali untuk squad Eastcostra Zepeto Official Member, sesuai dengan detail kamu:
+
+🔧 Fitur yang Dibuat
+Slash command /daftar
+
+Tombol "Daftar Sekarang"
+
+Modal (form pop-up) untuk mengisi:
+
+Username Zepeto
+
+Umur
+
+Link profil Zepeto
+
+Bot kirim embed ke:
+
+Channel tempat tombol ditekan
+
+DM ke semua dengan role Zepeto Staff
+
+Cek apakah user sudah pernah daftar (hanya satu kali)
+
+📦 Struktur Folder (Node.js + Discord.js v14)
+pgsql
+Copy
+Edit
+bot/
+├── index.js
+├── commands/
+│   └── daftar.js
+├── handlers/
+│   └── modalHandler.js
+├── data/
+│   └── registered.json
+✅ Langkah 1: Command /daftar
+js
+Copy
+Edit
+// commands/daftar.js
+const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('daftar')
+    .setDescription('Daftar jadi member resmi Eastcostra Zepeto Squad'),
+
+  async execute(interaction) {
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('open_daftar_modal')
+        .setLabel('Daftar Sekarang')
+        .setStyle(ButtonStyle.Primary)
+    );
+
+    await interaction.reply({
+      content: 'Klik tombol di bawah untuk mulai registrasi:',
+      components: [row],
+      ephemeral: true,
+    });
+  },
+};
+✅ Langkah 2: Button & Modal Handler
+js
+Copy
+Edit
+// handlers/modalHandler.js
+const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder } = require('discord.js');
+const fs = require('fs');
+const path = './data/registered.json';
+
+if (!fs.existsSync(path)) fs.writeFileSync(path, '{}');
+
+const registered = require('../data/registered.json');
+
+module.exports = {
+  name: 'interactionCreate',
+  async execute(interaction) {
+    if (interaction.isButton()) {
+      if (interaction.customId === 'open_daftar_modal') {
+        if (registered[interaction.user.id]) {
+          return interaction.reply({ content: '❌ Kamu sudah pernah mendaftar.', ephemeral: true });
+        }
+
+        const modal = new ModalBuilder()
+          .setCustomId('daftar_zepeto_modal')
+          .setTitle('Formulir Pendaftaran Zepeto');
+
+        const username = new TextInputBuilder()
+          .setCustomId('username')
+          .setLabel('Username Zepeto')
+          .setStyle(TextInputStyle.Short)
+          .setRequired(true);
+
+        const umur = new TextInputBuilder()
+          .setCustomId('umur')
+          .setLabel('Umur')
+          .setStyle(TextInputStyle.Short)
+          .setRequired(true);
+
+        const link = new TextInputBuilder()
+          .setCustomId('link')
+          .setLabel('Link Profil Zepeto')
+          .setStyle(TextInputStyle.Short)
+          .setRequired(true);
+
+        modal.addComponents(
+          new ActionRowBuilder().addComponents(username),
+          new ActionRowBuilder().addComponents(umur),
+          new ActionRowBuilder().addComponents(link)
+        );
+
+        return interaction.showModal(modal);
+      }
+    }
+
+    if (interaction.isModalSubmit()) {
+      if (interaction.customId === 'daftar_zepeto_modal') {
+        const username = interaction.fields.getTextInputValue('username');
+        const umur = interaction.fields.getTextInputValue('umur');
+        const link = interaction.fields.getTextInputValue('link');
+
+        // Cegah double daftar
+        const regData = require('../data/registered.json');
+        if (regData[interaction.user.id]) {
+          return interaction.reply({ content: '❌ Kamu sudah mendaftar sebelumnya.', ephemeral: true });
+        }
+
+        // Simpan data
+        regData[interaction.user.id] = { username, umur, link };
+        fs.writeFileSync(path, JSON.stringify(regData, null, 2));
+
+        const embed = new EmbedBuilder()
+          .setTitle('📝 Pendaftaran Member Zepeto')
+          .addFields(
+            { name: 'Username Zepeto', value: username },
+            { name: 'Umur', value: umur },
+            { name: 'Link Profil', value: link }
+          )
+          .setColor('Blue')
+          .setFooter({ text: `Didaftarkan oleh ${interaction.user.tag}` })
+          .setTimestamp();
+
+        await interaction.reply({ content: '✅ Pendaftaran berhasil! Silakan tunggu bimbingan dari staff.', embeds: [embed], ephemeral: true });
+
+        // Kirim ke DM staff
+        const role = interaction.guild.roles.cache.find(r => r.name === 'Zepeto Staff');
+        if (role) {
+          role.members.forEach(member => {
+            member.send({ embeds: [embed] }).catch(() => {});
+          });
+        }
+      }
+    }
+  },
+};
+✅ Langkah 3: index.js
+js
+Copy
+Edit
+const { Client, Collection, GatewayIntentBits, Events } = require('discord.js');
+const fs = require('fs');
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
+
+client.commands = new Collection();
+const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+for (const file of commandFiles) {
+  const command = require(`./commands/${file}`);
+  client.commands.set(command.data.name, command);
+}
+
+client.once(Events.ClientReady, () => {
+  console.log(`Logged in as ${client.user.tag}`);
+});
+
+client.on(Events.InteractionCreate, async interaction => {
+  if (interaction.isChatInputCommand()) {
+    const command = client.commands.get(interaction.commandName);
+    if (!command) return;
+    try {
+      await command.execute(interaction);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+});
+
+// Modal & button handler
+client.on(Events.InteractionCreate, require('./handlers/modalHandler').execute);
+
+client.login('YOUR_BOT_TOKEN');
+💬 Pesan Bimbingan
+Silakan kirim isi pesan bimbingan yang ingin ditampilkan setelah form dikirim. Contoh:
+
+"Terima kasih telah mendaftar. Tim kami akan segera menghubungi kamu. Pastikan kamu aktif di server dan siap mengikuti instruksi berikutnya."
+
+Kalau kamu mau, aku juga bisa bantu deploy langsung via Replit atau hosting lainnya.
+
+Mau aku bantu buat file JSON atau .zip untuk langsung dijalankan?

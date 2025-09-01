@@ -1,0 +1,197 @@
+const {
+  SlashCommandBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  EmbedBuilder,
+  SelectMenuBuilder,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+} = require('discord.js');
+const fs = require('fs');
+const path = './utils/admin schedule/schedules/schedules.json';
+
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('schedule')
+    .setDescription('Panel untuk mengatur pesan terjadwal'),
+
+  async execute(interaction) {
+    const embed = new EmbedBuilder()
+      .setTitle('📆 Panel Penjadwalan Pesan Otomatis')
+      .setDescription(
+        'Gunakan tombol di bawah untuk membuat, melihat, atau menghapus pesan terjadwal.\n\n**Format JSON untuk embed:**\n\\```json\n{\n  "title": "Judul",\n  "description": "Isi pesan",\n  "color": 16711680,\n  "thumbnail": { "url": "https://link.to/thumb.png" },\n  "image": { "url": "https://link.to/banner.jpg" },\n  "loop": true\n}\n\\```\n⚠️ *Footer akan otomatis diset ke* `© єαѕт¢σѕтяα`\n🕓 *Waktu format: YYYY-MM-DDTHH:mm*'
+      )
+      .setColor(0x2b2d31)
+      .setFooter({ text: '© єαѕт¢σѕтяα' });
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('createSchedule')
+        .setLabel('➕ Buat Jadwal')
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId('deleteSchedule')
+        .setLabel('🗑️ Hapus Jadwal')
+        .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder()
+        .setCustomId('listSchedule')
+        .setLabel('📜 Lihat Jadwal')
+        .setStyle(ButtonStyle.Primary)
+    );
+
+    await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+  },
+
+  loadSchedules() {
+    try {
+      const data = fs.readFileSync(path);
+      return JSON.parse(data);
+    } catch {
+      return [];
+    }
+  },
+
+  saveSchedules(schedules) {
+    fs.writeFileSync(path, JSON.stringify(schedules, null, 2));
+  },
+
+  saveSchedule(schedule) {
+    const schedules = this.loadSchedules();
+    schedules.push(schedule);
+    this.saveSchedules(schedules);
+  },
+
+  async createHandler(interaction) {
+    const modal = new ModalBuilder()
+      .setCustomId('scheduleModal')
+      .setTitle('➕ Buat Jadwal Baru');
+
+    const jsonInput = new TextInputBuilder()
+      .setCustomId('embedJson')
+      .setLabel('Masukkan JSON Embed')
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder('{\n  "title": "...",\n  "description": "..."\n}')
+      .setRequired(true);
+
+    const timeInput = new TextInputBuilder()
+      .setCustomId('scheduleTime')
+      .setLabel('Waktu (YYYY-MM-DDTHH:mm)')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(jsonInput),
+      new ActionRowBuilder().addComponents(timeInput)
+    );
+
+    await interaction.showModal(modal);
+  },
+
+  async listHandler(interaction) {
+    const schedules = this.loadSchedules();
+
+    if (schedules.length === 0) {
+      return interaction.reply({ content: 'Tidak ada jadwal yang tersimpan.', ephemeral: true });
+    }
+
+    const embed = new EmbedBuilder()
+      .setTitle('📜 Daftar Jadwal Terjadwal')
+      .setColor(0x2b2d31)
+      .setFooter({ text: '© єαѕт¢σѕтяα' });
+
+    schedules.forEach((s, i) => {
+      embed.addFields({
+        name: `${i + 1}. ${s.embed?.title || 'Tanpa Judul'}`,
+        value: `- **Channel**: <#${s.channelId}>\n- **Waktu**: ${s.time}\n- **Loop**: ${s.embed?.loop ? '🔁' : '⏹️'}`,
+        inline: false,
+      });
+    });
+
+    return interaction.reply({ embeds: [embed], ephemeral: true });
+  },
+
+  async deleteHandler(interaction) {
+    const schedules = this.loadSchedules();
+
+    if (schedules.length === 0) {
+      return interaction.reply({ content: 'Tidak ada jadwal yang dapat dihapus.', ephemeral: true });
+    }
+
+    const selectMenu = new SelectMenuBuilder()
+      .setCustomId('selectSchedule')
+      .setPlaceholder('Pilih jadwal yang ingin dihapus')
+      .setMinValues(1)
+      .setMaxValues(1);
+
+    schedules.forEach((s, index) => {
+      selectMenu.addOptions({
+        label: s.embed.title || 'Tanpa Judul',
+        value: `${index}`,
+      });
+    });
+
+    const row = new ActionRowBuilder().addComponents(selectMenu);
+
+    const embed = new EmbedBuilder()
+      .setTitle('🗑️ Hapus Jadwal')
+      .setDescription('Pilih jadwal yang ingin dihapus.');
+
+    await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+  },
+
+  deleteSchedule(index) {
+    const schedules = this.loadSchedules();
+    schedules.splice(index, 1);
+    this.saveSchedules(schedules);
+  }
+};
+
+// EVENT HANDLER
+const { client } = require('../your-client'); // Ganti dengan path ke objek client kamu
+const scheduler = module.exports;
+
+client.on('interactionCreate', async (interaction) => {
+  if (interaction.isButton()) {
+    switch (interaction.customId) {
+      case 'createSchedule': return scheduler.createHandler(interaction);
+      case 'deleteSchedule': return scheduler.deleteHandler(interaction);
+      case 'listSchedule': return scheduler.listHandler(interaction);
+    }
+  }
+
+  if (interaction.isModalSubmit() && interaction.customId === 'scheduleModal') {
+    const json = interaction.fields.getTextInputValue('embedJson');
+    const time = interaction.fields.getTextInputValue('scheduleTime');
+
+    try {
+      const data = JSON.parse(json);
+
+      const embed = new EmbedBuilder()
+        .setTitle(data.title || 'Tanpa Judul')
+        .setDescription(data.description || '')
+        .setColor(data.color || 0x2b2d31)
+        .setFooter({ text: '© єαѕт¢σѕтяα' });
+
+      if (data.thumbnail?.url) embed.setThumbnail(data.thumbnail.url);
+      if (data.image?.url) embed.setImage(data.image.url);
+
+      scheduler.saveSchedule({
+        channelId: interaction.channel.id,
+        time: time,
+        embed: data
+      });
+
+      await interaction.reply({ content: '✅ Jadwal berhasil dibuat!', embeds: [embed], ephemeral: true });
+    } catch (err) {
+      await interaction.reply({ content: '❌ Format JSON salah. Coba lagi.', ephemeral: true });
+    }
+  }
+
+  if (interaction.isSelectMenu() && interaction.customId === 'selectSchedule') {
+    const index = parseInt(interaction.values[0]);
+    scheduler.deleteSchedule(index);
+    await interaction.update({ content: '✅ Jadwal berhasil dihapus.', components: [], embeds: [] });
+  }
+});

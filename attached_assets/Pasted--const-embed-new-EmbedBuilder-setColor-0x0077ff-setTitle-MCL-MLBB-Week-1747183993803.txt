@@ -1,0 +1,37 @@
+    const embed = new EmbedBuilder()
+      .setColor(0x0077ff)
+      .setTitle('🏆 MCL MLBB - Weekly Competition Reminder')
+      .setDescription(
+        `Halo Warriors!\n\n` +
+        `Bersiaplah untuk ajang paling bergengsi di akhir pekan: **Mobile Legends: Bang Bang - MCL (MLBB Championship League)**!\n\n` +
+        `📅 **Hari:** Sabtu\n` +
+        `🕘 **Waktu Saat Ini:** 21:00 WIB — Waktunya kamu mempersiapkan diri!\n` +
+        `🕕 **Start Match:** 18:30 WIB (minggu depan)\n\n` +
+        `MCL adalah kesempatan emas untuk menunjukkan kemampuanmu bersama tim terbaikmu dan meraih:\n` +
+        `🔹 Hadiah Diamond 💎\n` +
+        `🔹 Skin Eksklusif 🎁\n` +
+        `🔹 Gelar Juara Mingguan 🏅\n\n` +
+        `💡 Jangan lewatkan! Bentuk tim terbaikmu sekarang atau bergabung bersama rekan seperjuanganmu.\n\n` +
+        `> *“Satu tujuan, satu kemenangan — jadi legenda di arena MCL.”*`
+      )
+      .setThumbnail('https://cdn.discordapp.com/attachments/1370986803821154385/1371991939200716810/Screenshot_2023-12-18-00-33-19-46_40deb401b9ffe8e1df2f1cc5ba480b12-ai-brush-removebg-c58oi7vp.jpg')
+      .setImage('https://cdn.discordapp.com/attachments/1370986803821154385/1371999215894663228/apa-itu-mcl-mobile-legends-featured-640x360.jpg')
+      .setFooter({
+        text: '© єαѕт¢σѕтяα • Jadilah Legenda, Mulai dari Sekarang',
+        iconURL: 'https://cdn.discordapp.com/attachments/1370986803821154385/1371991939200716810/Screenshot_2023-12-18-00-33-19-46_40deb401b9ffe8e1df2f1cc5ba480b12-ai-brush-removebg-c58oi7vp.jpg'
+      });
+
+    const row = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('create_team')
+          .setLabel('🛠️ Create Team')
+          .setStyle(ButtonStyle.Primary),
+
+        new ButtonBuilder()
+          .setCustomId('join_team')
+          .setLabel('🤝 Join Team')
+          .setStyle(ButtonStyle.Success)
+      );
+
+    await channel.send({ embeds: [embed], components: [row] });

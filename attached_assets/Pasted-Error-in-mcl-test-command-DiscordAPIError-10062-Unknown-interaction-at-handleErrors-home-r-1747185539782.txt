@@ -1,0 +1,35 @@
+Error in mcl-test command: DiscordAPIError[10062]: Unknown interaction
+    at handleErrors (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:748:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async BurstHandler.runRequest (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:852:23)
+    at async _REST.request (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:1293:22)
+    at async ChatInputCommandInteraction.deferReply (/home/runner/workspace/node_modules/discord.js/src/structures/interfaces/InteractionResponses.js:123:22)
+    at async Object.execute (/home/runner/workspace/commands/schedule/messageSchedule.js:86:7)
+    at async Client.<anonymous> (/home/runner/workspace/handlers/commandHandler.js:72:7) {
+  requestBody: { files: undefined, json: { type: 5, data: [Object] } },
+  rawError: { message: 'Unknown interaction', code: 10062 },
+  code: 10062,
+  status: 404,
+  method: 'POST',
+  url: 'https://discord.com/api/v10/interactions/1372020194129608714/aW50ZXJhY3Rpb246MTM3MjAyMDE5NDEyOTYwODcxNDpCQnAxRG94R0JraU8wQ3dORWczclFMNHZaZnJQeEVmdVpUazVqQVRVanFBZGY5ejhYa3dkTTMyQ3NNbmc4azByNmFQWTlrN1pSOE1nVm5WZGRtWFF3ZkF4dlREcXYzOVR0MG81MlhJQ01RYUdUODloUDRjZWJqeXpFZ0dWRXp4UQ/callback?with_response=false'
+}
+DiscordAPIError[40060]: Interaction has already been acknowledged.
+    at handleErrors (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:748:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async BurstHandler.runRequest (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:852:23)
+    at async _REST.request (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:1293:22)
+    at async ChatInputCommandInteraction.reply (/home/runner/workspace/node_modules/discord.js/src/structures/interfaces/InteractionResponses.js:194:22)
+    at async Object.execute (/home/runner/workspace/commands/schedule/messageSchedule.js:97:16)
+    at async Client.<anonymous> (/home/runner/workspace/handlers/commandHandler.js:72:7) {
+  requestBody: { files: [], json: { type: 4, data: [Object] } },
+  rawError: {
+    message: 'Interaction has already been acknowledged.',
+    code: 40060
+  },
+  code: 40060,
+  status: 400,
+  method: 'POST',
+  url: 'https://discord.com/api/v10/interactions/1372020194129608714/aW50ZXJhY3Rpb246MTM3MjAyMDE5NDEyOTYwODcxNDpCQnAxRG94R0JraU8wQ3dORWczclFMNHZaZnJQeEVmdVpUazVqQVRVanFBZGY5ejhYa3dkTTMyQ3NNbmc4azByNmFQWTlrN1pSOE1nVm5WZGRtWFF3ZkF4dlREcXYzOVR0MG81MlhJQ01RYUdUODloUDRjZWJqeXpFZ0dWRXp4UQ/callback?with_response=false'
+}
+(node:7014) Warning: Supplying "ephemeral" for interaction response options is deprecated. Utilize flags instead.
+(Use `node --trace-warnings ...` to show where the warning was created)

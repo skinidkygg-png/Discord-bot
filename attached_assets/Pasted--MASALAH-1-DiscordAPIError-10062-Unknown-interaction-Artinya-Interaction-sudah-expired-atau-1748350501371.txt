@@ -1,0 +1,92 @@
+🧨 MASALAH 1: DiscordAPIError[10062]: Unknown interaction
+💬 Artinya:
+Interaction sudah expired atau sudah digunakan, tetapi kamu tetap mencoba memanggil interaction.update().
+
+💡 Solusi:
+Sebelum memanggil interaction.update() atau interaction.reply(), pastikan interaksi belum pernah digunakan.
+
+Tambahkan pengecekan ini:
+
+js
+Copy
+Edit
+if (interaction.replied || interaction.deferred) return;
+🧨 MASALAH 2: DiscordAPIError[40060]: Interaction has already been acknowledged.
+💬 Artinya:
+Kamu mencoba reply() atau update() lebih dari sekali ke interaction yang sama.
+
+💡 Solusi:
+Sama seperti di atas, cek status dulu sebelum membalas.
+
+Contoh implementasi aman:
+
+js
+Copy
+Edit
+if (!interaction.replied && !interaction.deferred) {
+  await interaction.update({
+    // your update
+  });
+} else {
+  // Log atau abaikan
+}
+✅ CONTOH PERBAIKAN DI handleGuideInteraction
+Di bagian seperti ini (guideHandler.js line 95 atau 157):
+
+js
+Copy
+Edit
+try {
+  // ... logic ambil page baru
+
+  if (interaction.replied || interaction.deferred) return;
+
+  await interaction.update({
+    embeds: [newEmbed],
+    components: [getNavigationButtons(newPageIndex, userId)]
+  });
+
+} catch (err) {
+  console.error('Error handling guide interaction:', err);
+
+  // Jangan kirim error reply kalau sudah acknowledged
+  if (!interaction.replied && !interaction.deferred) {
+    await interaction.reply({
+      content: '❌ Terjadi kesalahan saat memperbarui tampilan.',
+      ephemeral: true
+    });
+  }
+}
+✅ BONUS: Agar tombol hanya bisa dipakai satu kali oleh user tertentu
+Sudah dijelaskan sebelumnya, tinggal pastikan:
+
+customId mengandung userId → guide_next_1234567890
+
+Validasi: interaction.user.id === userId
+
+Setelah update(), customId berubah, tombol lama tidak aktif lagi
+
+⚠️ WARNING: Ini juga muncul
+bash
+Copy
+Edit
+(node:2127) Warning: Supplying "ephemeral" for interaction response options is deprecated.
+💡 Solusi:
+Ganti ini:
+
+js
+Copy
+Edit
+ephemeral: true
+Dengan:
+
+js
+Copy
+Edit
+flags: MessageFlags.Ephemeral
+Tambahkan import di atas file:
+
+js
+Copy
+Edit
+const { MessageFlags } = require('discord-api-types/v10');

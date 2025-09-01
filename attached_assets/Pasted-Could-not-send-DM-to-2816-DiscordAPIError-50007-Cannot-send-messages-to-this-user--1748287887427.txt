@@ -1,0 +1,89 @@
+Could not send DM to єαѕт¢σѕтяα#2816: DiscordAPIError[50007]: Cannot send messages to this user
+    at handleErrors (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:748:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async SequentialHandler.runRequest (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:1149:23)
+    at async SequentialHandler.queueRequest (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:980:14)
+    at async _REST.request (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:1293:22)
+    at async UserManager.createDM (/home/runner/workspace/node_modules/discord.js/src/managers/UserManager.js:64:18)
+    at async GuildMember.send (/home/runner/workspace/node_modules/discord.js/src/structures/interfaces/TextBasedChannel.js:182:18)
+    at async /home/runner/workspace/utils/zepetoHandler.js:460:16 {
+  requestBody: { files: undefined, json: { recipient_id: '1365133224400916501' } },
+  rawError: { message: 'Cannot send messages to this user', code: 50007 },
+  code: 50007,
+  status: 400,
+  method: 'POST',
+  url: 'https://discord.com/api/v10/users/@me/channels'
+}
+Error adding Zepeto role: DiscordAPIError[50001]: Missing Access
+    at handleErrors (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:748:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async SequentialHandler.runRequest (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:1149:23)
+    at async SequentialHandler.queueRequest (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:980:14)
+    at async _REST.request (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:1293:22)
+    at async GuildMemberRoleManager.add (/home/runner/workspace/node_modules/discord.js/src/managers/GuildMemberRoleManager.js:133:7)
+    at async handleZepetoInteraction (/home/runner/workspace/utils/zepetoHandler.js:162:13) {
+  requestBody: { files: undefined, json: undefined },
+  rawError: { message: 'Missing Access', code: 50001 },
+  code: 50001,
+  status: 403,
+  method: 'PUT',
+  url: 'https://discord.com/api/v10/guilds/947817894635520011/members/1149931781617881149/roles/1376620464671293541'
+}
+(node:2353) Warning: Supplying "ephemeral" for interaction response options is deprecated. Utilize flags instead.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Error adding Zepeto role: DiscordAPIError[50001]: Missing Access
+    at handleErrors (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:748:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async SequentialHandler.runRequest (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:1149:23)
+    at async SequentialHandler.queueRequest (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:980:14)
+    at async _REST.request (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:1293:22)
+    at async GuildMemberRoleManager.add (/home/runner/workspace/node_modules/discord.js/src/managers/GuildMemberRoleManager.js:133:7)
+    at async handleZepetoInteraction (/home/runner/workspace/utils/zepetoHandler.js:162:13) {
+  requestBody: { files: undefined, json: undefined },
+  rawError: { message: 'Missing Access', code: 50001 },
+  code: 50001,
+  status: 403,
+  method: 'PUT',
+  url: 'https://discord.com/api/v10/guilds/947817894635520011/members/1149931781617881149/roles/1376620464671293541'
+}
+Error adding trial role: DiscordAPIError[50001]: Missing Access
+    at handleErrors (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:748:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async SequentialHandler.runRequest (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:1149:23)
+    at async SequentialHandler.queueRequest (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:980:14)
+    at async _REST.request (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:1293:22)
+    at async GuildMemberRoleManager.add (/home/runner/workspace/node_modules/discord.js/src/managers/GuildMemberRoleManager.js:133:7)
+    at async handleZepetoInteraction (/home/runner/workspace/utils/zepetoHandler.js:234:13) {
+  requestBody: { files: undefined, json: undefined },
+  rawError: { message: 'Missing Access', code: 50001 },
+  code: 50001,
+  status: 403,
+  method: 'PUT',
+  url: 'https://discord.com/api/v10/guilds/947817894635520011/members/1149931781617881149/roles/1376620464671293541'
+}
+Error adding trial role: DiscordAPIError[50001]: Missing Access
+    at handleErrors (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:748:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async SequentialHandler.runRequest (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:1149:23)
+    at async SequentialHandler.queueRequest (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:980:14)
+    at async _REST.request (/home/runner/workspace/node_modules/@discordjs/rest/dist/index.js:1293:22)
+    at async GuildMemberRoleManager.add (/home/runner/workspace/node_modules/discord.js/src/managers/GuildMemberRoleManager.js:133:7)
+    at async handleZepetoInteraction (/home/runner/workspace/utils/zepetoHandler.js:234:13) {
+  requestBody: { files: undefined, json: undefined },
+  rawError: { message: 'Missing Access', code: 50001 },
+  code: 50001,
+  status: 403,
+  method: 'PUT',
+  url: 'https://discord.com/api/v10/guilds/947817894635520011/members/1171013986326679572/roles/1376620464671293541'
+}
+ReferenceError: handleHelp is not defined
+    at Object.execute (/home/runner/workspace/commands/zepeto/registration.js:136:9)
+    at Client.<anonymous> (/home/runner/workspace/handlers/commandHandler.js:72:21)
+    at Client.emit (node:events:530:35)
+    at InteractionCreateAction.handle (/home/runner/workspace/node_modules/discord.js/src/client/actions/InteractionCreate.js:97:12)
+    at module.exports [as INTERACTION_CREATE] (/home/runner/workspace/node_modules/discord.js/src/client/websocket/handlers/INTERACTION_CREATE.js:4:36)
+    at WebSocketManager.handlePacket (/home/runner/workspace/node_modules/discord.js/src/client/websocket/WebSocketManager.js:351:31)
+    at WebSocketManager.<anonymous> (/home/runner/workspace/node_modules/discord.js/src/client/websocket/WebSocketManager.js:235:12)
+    at WebSocketManager.emit (/home/runner/workspace/node_modules/@vladfrangu/async_event_emitter/dist/index.cjs:287:31)
+    at WebSocketShard.<anonymous> (/home/runner/workspace/node_modules/@discordjs/ws/dist/index.js:1190:51)
+    at WebSocketShard.emit (/home/runner/workspace/node_modules/@vladfrangu/async_event_emitter/dist/index.cjs:287:31)
