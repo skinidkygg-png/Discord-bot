@@ -1,22 +1,33 @@
 {
-  "name": "nodejs",
+  "name": "discord-bot",
   "version": "1.0.0",
-  "description": "",
+  "description": "Discord bot project with multiple features (welcome, status, afk, etc.)",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "discord",
+    "bot",
+    "railway",
+    "discord.js",
+    "nodejs"
+  ],
+  "author": "Radeza",
+  "license": "MIT",
   "dependencies": {
     "@discordjs/voice": "^0.18.0",
-    "@types/node": "^22.13.11",
     "axios": "^1.9.0",
     "discord.js": "^14.19.3",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
-    "js2py": "^1.0.3-3",
     "node-cron": "^4.0.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=18.x"
   }
 }
